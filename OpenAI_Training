@@ -20,7 +20,7 @@ elif len(prompt) == 0:
         sys.exit()  # Exit the program
         response_type = input("\n For response in textual format, enter T. For response in image format, enter F.")
 else:
-    response_type = input("\n For response in textual format, enter T. For response in image format, enter F. If you need reponse in both image and text, enter B?")
+    response_type = input("\n For response in textual format, enter T. For response in image format, enter F")
  
 #Creating ChatCompletions function:
 if response_type.lower() == "t":

@@ -1,0 +1,89 @@
+from openai import AzureOpenAI
+from openai import AzureOpenAI
+import requests
+import sys
+ 
+ 
+#Set the API Keys, Endpoint and Model Deployment
+azure_oai_endpoint = "https://eyuser26.openai.azure.com/"
+azure_oai_key = "98138d9733f746a6aa3652f29c183d0d"
+ 
+#Getting the prompt from the user
+prompt = input("\n Hi! I am Panacea, your personal medical assistant. How may I help you? (If you want to exit, please enter quit.)")
+if prompt.lower() == "quit":
+    print("Thank you for the visit. Have a good day !")
+    sys.exit()  # Exit the program
+elif len(prompt) == 0:
+    prompt = input("\n You have entered an empty query. How may I help you? If you want to exit, please enter quit")
+    if prompt.lower() == "quit":
+        print("Thank you for the visit. Have a good day !")
+        sys.exit()  # Exit the program
+        response_type = input("\n For response in textual format, enter T. For response in image format, enter F.")
+else:
+    response_type = input("\n For response in textual format, enter T. For response in image format, enter F. If you need reponse in both image and text, enter B?")
+ 
+#Creating ChatCompletions function:
+if response_type.lower() == "t":
+    azure_oai_deployment ="pikapika"
+    client = AzureOpenAI(
+        azure_endpoint = azure_oai_endpoint,
+        api_key=azure_oai_key,  
+        api_version="2024-02-15-preview"
+        )
+    messages_array = [
+              {"role": "system", "content": "You are a medical assistant who helps user with their health and well being related queries. If there is any non medical query, your response is This is beyond my capacities. Please ask only helath and medical queries."},
+              {"role": "user", "content": "How do i treat fever ?"},
+              {"role": "assistant", "content": """I'm not a doctor, but I can offer some general suggestions on how to treat a fever. Please consult a healthcare professional for personalized advice. Here are a few tips:
+                                             Rest: Get plenty of rest to help your body recover.
+                                             Stay hydrated: Drink plenty of fluids like water, herbal tea, or clear broth to prevent dehydration.
+                                             Medications: Over-the-counter fever reducers like acetaminophen (Tylenol) or ibuprofen (Advil, Motrin) can help reduce fever. Follow the instructions and consult a pharmacist or doctor if you have any concerns or underlying health conditions.
+                                             Cool compress: Apply a cool compress to your forehead or take a lukewarm bath to help bring down your body temperature.
+                                             Dress lightly: Wear lightweight and breathable clothing to avoid overheating.
+                                             Monitor your symptoms: If your fever persists, worsens, or is accompanied by severe symptoms, seek medical attention."""}
+          ]
+    # Add code to send request...
+    # Send request to Azure OpenAI model
+    messages_array.append({"role": "user", "content": prompt})
+ 
+    response = client.chat.completions.create(
+      model=azure_oai_deployment,
+      temperature=0.7,
+      max_tokens=1500,
+      messages=messages_array
+    )
+    generated_text = response.choices[0].message.content
+    # Add generated text to messages array
+    messages_array.append({"role": "system", "content": generated_text})
+ 
+    # Print generated text
+    print("Summary: " + generated_text + "\n")
+ 
+# If response is needed in Image format
+if response_type.lower() == "f":
+    azure_oai_deployment ="Dalle3"
+    api_version="2024-02-15-preview"
+    url = "{}openai/deployments/dalle3/images/generations?api-version={}".format(azure_oai_endpoint, api_version)
+    headers= { "api-key": azure_oai_key, "Content-Type": "application/json" }
+    body = {
+            "prompt": prompt,
+            "n": 1,
+            "size": "1024x1024"
+        }
+    response = requests.post(url, headers=headers, json=body)
+    print(response.json())
+    image_url = response.json()['data'][0]['url']
+    revised_prompt = response.json()['data'][0]['revised_prompt']
+ 
+    # Print Image URL with the description
+    print(revised_prompt)
+    print(image_url)
+    save_path = 'image_name.jpg'
+ 
+    # Download the image and save it to the specified path
+    response = requests.get(image_url)
+    if response.status_code == 200:
+        with open(save_path, 'wb') as f:
+            f.write(response.content)
+            print(f"Image saved to {save_path}")
+    else:
+        print("failed to download image")
